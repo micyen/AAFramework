@@ -72,8 +72,8 @@ class PAM(nn.Module):
     """ Position Attention Module """
     def __init__(self, channel):
         super(PAM, self).__init__()
-        self.conv = nn.Conv2d(channel, 1, kernel_size=1)
-        self.act = nn.Sigmoid()
+        self.conv = nn.Conv2d(channel, 1, kernel_size=1) # 1 by 1 convolution
+        self.act = nn.Sigmoid() # sigmoid
 
     def forward(self, x):
         """
@@ -83,22 +83,23 @@ class PAM(nn.Module):
         Returns:
             [torch.tensor]: size N*C*H*W
         """
+        residual = x
         _, c, _, _ = x.size()
         y = self.act(self.conv(x))
-        y = y.repeat(1, c, 1, 1)
-        return x * y
+        y = y.repeat(1, c, 1, 1) # repeats the tensor along the channels
+        return x * y + residual
 
 
 class CAM(nn.Module):
     """ Channel Attention Module """
     def __init__(self, channel, reduction=16):
         super(CAM, self).__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.avg_pool = nn.AdaptiveAvgPool2d(1) # Get whole avg of channel
         self.fc = nn.Sequential(
-            nn.Linear(channel, channel // reduction, bias=False),
-            nn.ReLU(inplace=True),
-            nn.Linear(channel // reduction, channel, bias=False),
-            nn.Sigmoid()
+            nn.Linear(channel, channel // reduction, bias=False), # Fully connected layer
+            nn.ReLU(inplace=True), # nonlinearity
+            nn.Linear(channel // reduction, channel, bias=False), # fullly connected layer
+            nn.Sigmoid() # activation function
         )
 
     def forward(self, x):
@@ -109,10 +110,11 @@ class CAM(nn.Module):
         Returns:
             [torch.tensor]: size N*C*H*W
         """
+        residual = x
         b, c, _, _ = x.size()
         y = self.avg_pool(x).view(b, c)
         y = self.fc(y).view(b, c, 1, 1)
-        return x * y.expand_as(x)
+        return x * y.expand_as(x) + residual
 
 
 class DAM_Position(nn.Module):
@@ -194,10 +196,10 @@ class AAUNet(nn.Module):
         self.down3 = encoder(128, 256)
         self.down4 = encoder(256, 512)
         self.middle_conv = nn.Sequential(
-            nn.Conv2d(512, 1024, kernel_size=3, padding=1),
+            nn.Conv2d(512, 1024, kernel_size=3, padding=2, dilation=2),
             nn.BatchNorm2d(1024),
             nn.ReLU(inplace=True),
-            nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+            nn.Conv2d(1024, 1024, kernel_size=3, padding=2, dilation=2),
             nn.BatchNorm2d(1024),
             nn.ReLU(inplace=True),
         )
@@ -254,10 +256,10 @@ class encoder(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(encoder, self).__init__()
         self.down_conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=2, dilation=2),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=2, dilation=2),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
         )
@@ -274,10 +276,10 @@ class decoder(nn.Module):
         super(decoder, self).__init__()
         self.up = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
         self.up_conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=2, dilation=2),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=2, dilation=2),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
         )
