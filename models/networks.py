@@ -205,8 +205,10 @@ class AAUNet(nn.Module):
         )
 
         # attention module
-        self.dam_p = DAM_Position(1024)
-        self.dam_c = DAM_Channel(1024)
+        # self.dam_p = DAM_Position(1024)
+        # self.dam_c = DAM_Channel(1024)
+        self.cam_c = CAM(1024)
+        self.pam_p = PAM(1024)
         # self.cam1 = CAM(64)
         self.cam2 = CAM(128)
         self.cam3 = CAM(256)
@@ -225,7 +227,7 @@ class AAUNet(nn.Module):
 
         # initialization layers
         self.need_initialization = [self.down1, self.down2, self.down3, self.down4, self.middle_conv,
-                                    self.dam_p, self.dam_c, self.cam2, self.cam3, self.cam4, self.pam1,
+                                    self.pam_p, self.cam_c, self.cam2, self.cam3, self.cam4, self.pam1,
                                     self.up1, self.up2, self.up3, self.up4, self.final_conv]
 
     def forward(self, x):
@@ -237,7 +239,7 @@ class AAUNet(nn.Module):
         x = self.middle_conv(x)
 
         # attention module
-        x = self.dam_p(x) + self.dam_c(x)
+        x = self.pam_p(x) + self.cam_c(x)
         x4 = self.cam4(x4)
         x3 = self.cam3(x3)
         x2 = self.cam2(x2)
@@ -350,8 +352,10 @@ class AARTFNet(nn.Module):
         self.encoder_rgb_layer4 = resnet_raw_model2.layer4
 
         # attention module
-        self.dam_p = DAM_Position(2048)
-        self.dam_c = DAM_Channel(2048)
+        # self.dam_p = DAM_Position(2048)
+        # self.dam_c = DAM_Channel(2048)
+        self.cam_c = CAM(2048)
+        self.pam_p = PAM(2048)
         # self.cam1 = CAM(64)
         self.cam2 = CAM(256)
         self.cam3 = CAM(512)
@@ -427,7 +431,7 @@ class AARTFNet(nn.Module):
         x = rgb + tdisp
 
         # attention module
-        x = self.dam_p(x) + self.dam_c(x)
+        x = self.pam_p(x) + self.cam_c(x)
         x4 = self.cam4(x4)
         x3 = self.cam3(x3)
         x2 = self.cam2(x2)
